@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option go_package = "github.com/FranmanV2/Mandatory-Activity-5/proto";
+
+enum Outcome {
+  SUCCESS = 0;
+  FAIL = 1;
+  EXCEPTION = 2;
+}
+
+// Client-facing
+service Auction {
+  rpc Bid(BidRequest) returns (BidReply);
+  rpc Result(ResultRequest) returns (ResultReply);
+}
+
+message BidRequest {
+  string bidder_id = 1;
+  int32 amount = 2;
+}
+
+message BidReply {
+  Outcome outcome = 1;
+}
+
+message ResultRequest {}
+
+message ResultReply {
+  bool over = 1;
+  int32 highest_bid = 2;
+  string highest_bidder = 3;
+}
+
+// Node-to-node
+service Replication {
+  rpc Replicate(StateUpdate) returns (Ack);
+  rpc Heartbeat(Ping) returns (Pong);
+}
+
+message StateUpdate {
+  int64 version = 1;                // increases with every accepted bid
+  int32 highest_bid = 2;
+  string highest_bidder = 3;
+  map<string, int32> bidders = 4;   // bidder_id -> their latest bid
+  int64 deadline_unix_ms = 5;       // absolute deadline
+}
+
+message Ack {}
+
+message Ping {
+  int32 node_id = 1;
+}
+
+message Pong {}
