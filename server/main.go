@@ -31,14 +31,17 @@ func main() {
 	// theirs (see Restore in auction.go).
 	auction := NewAuction(time.Now().Add(*duration))
 
+	// One failure detector per node, shared by both services.
+	fd := newFailureDetector(*id, peerList)
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("cannot listen on port %d: %v", *port, err)
 	}
 
 	srv := grpc.NewServer()
-	pb.RegisterAuctionServer(srv, newAuctionServer(auction, *id, peerList))         // Person 2
-	pb.RegisterReplicationServer(srv, newReplicationServer(auction, *id, peerList)) // Person 2 (Replicate) + Person 3 (Heartbeat)
+	pb.RegisterAuctionServer(srv, newAuctionServer(auction, *id, peerList, fd))         // Person 2
+	pb.RegisterReplicationServer(srv, newReplicationServer(auction, *id, peerList, fd)) // Person 2 (Replicate) + Person 3 (Heartbeat)
 
 	log.Printf("starting on port %d, peers %v, auction ends in %v", *port, peerList, *duration)
 	if err := srv.Serve(lis); err != nil {
